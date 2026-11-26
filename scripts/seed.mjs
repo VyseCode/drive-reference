@@ -119,7 +119,7 @@ async function main() {
     { _id: false },
   );
   const shareSchema = new mongoose.Schema(
-    { visibility: String, nonce: String, acl: [aclSchema] },
+    { visibility: String, nonce: String, linkRole: { type: String, default: "viewer" }, acl: [aclSchema] },
     { _id: false },
   );
   const nodeSchema = new mongoose.Schema(

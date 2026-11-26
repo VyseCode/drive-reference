@@ -10,6 +10,7 @@ type AccessNode = {
   share: {
     visibility: Visibility;
     nonce: string;
+    linkRole?: ShareRole;
     acl: Array<{ user: IdLike; role: ShareRole }>;
   };
 };
@@ -35,7 +36,8 @@ export function describeAccess(
     link &&
     link.nodeId === nodeId &&
     link.nonce === node.share.nonce &&
-    node.share.visibility === "link"
+    node.share.visibility === "link" &&
+    (node.share.linkRole ?? "viewer") === link.role
   ) {
     return {
       view: true,

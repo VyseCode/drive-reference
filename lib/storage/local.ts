@@ -3,14 +3,14 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { StorageAdapter, StoredObject } from "./types";
 
-const root = path.resolve(process.cwd(), process.env.STORAGE_DIR || ".data/blobs");
+const configured = (process.env.STORAGE_DIR || "blobs").replace(/^\.?\/?\.data\//, "");
+const subdir = /^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(configured) ? configured : "blobs";
+const root = path.join(process.cwd(), ".data", subdir);
 const KEY_PATTERN = /^[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.[a-z0-9]+$/;
 
 function resolveKey(key: string): string {
   if (!KEY_PATTERN.test(key)) throw new Error("Invalid storage key");
-  const full = path.resolve(root, key);
-  if (!full.startsWith(root + path.sep)) throw new Error("Invalid storage key");
-  return full;
+  return `${root}${path.sep}${key}`;
 }
 
 export function makeStorageKey(userId: string, extension: string): string {

@@ -13,6 +13,7 @@ export interface IAclEntry {
 export interface IShare {
   visibility: Visibility;
   nonce: string;
+  linkRole: ShareRole;
   acl: IAclEntry[];
 }
 
@@ -50,6 +51,7 @@ const shareSchema = new Schema<IShare>(
       default: "private",
     },
     nonce: { type: String, default: () => randomUUID() },
+    linkRole: { type: String, enum: ["viewer", "editor"], default: "viewer" },
     acl: { type: [aclSchema], default: [] },
   },
   { _id: false },
