@@ -88,25 +88,25 @@ check 'list anonymous' 401 "$(request GET '/api/files' "$TMP/anon.jar")"
 
 echo '--- CRUD and edge cases ---'
 check 'create folder' 201 "$(request POST /api/files/folder "$TMP/alex.jar" '{"name":"Audit","parent":null}')"
-AUDIT=$(get id)
+AUDIT=$(get file.id)
 check 'duplicate name in folder' 409 "$(request POST /api/files/folder "$TMP/alex.jar" '{"name":"audit","parent":null}')"
 check 'create subfolder' 201 "$(request POST /api/files/folder "$TMP/alex.jar" "{\"name\":\"Sub\",\"parent\":\"$AUDIT\"}")"
-SUB=$(get id)
+SUB=$(get file.id)
 check 'create sibling folder' 201 "$(request POST /api/files/folder "$TMP/alex.jar" "{\"name\":\"Draft\",\"parent\":\"$AUDIT\"}")"
 check 'move folder into itself' 400 "$(request PATCH "/api/files/$AUDIT" "$TMP/alex.jar" "{\"action\":\"move\",\"parent\":\"$AUDIT\"}")"
 check 'move folder into descendant' 400 "$(request PATCH "/api/files/$AUDIT" "$TMP/alex.jar" "{\"action\":\"move\",\"parent\":\"$SUB\"}")"
 check 'rename folder' 200 "$(request PATCH "/api/files/$AUDIT" "$TMP/alex.jar" '{"action":"rename","name":"Audit 2026"}')"
 check 'rename duplicate' 409 "$(request PATCH "/api/files/$SUB" "$TMP/alex.jar" '{"action":"rename","name":"Draft"}')"
 check 'upload text file' 201 "$(upload "$TMP/alex.jar" "$TMP/notes.txt" 'notes.txt')"
-NOTES=$(get id)
+NOTES=$(get file.id)
 check 'upload duplicate name' 409 "$(upload "$TMP/alex.jar" "$TMP/notes.txt" 'notes.txt')"
 check 'invalid file type' 415 "$(upload "$TMP/alex.jar" "$TMP/bad.exe" 'bad.exe')"
 check 'quota exceeded' 413 "$(upload "$TMP/casey.jar" "$TMP/big.txt" 'big.txt')"
 check 'star file' 200 "$(request PATCH "/api/files/$NOTES" "$TMP/alex.jar" '{"action":"star","starred":true}')"
-check 'star appears in starred' true "$(request GET '/api/files?view=starred' "$TMP/alex.jar" >/dev/null; python3 -c "import json;print(any(i['id']=='$NOTES' for i in json.load(open('$TMP/body'))['items']))")"
+check 'star appears in starred' true "$(request GET '/api/files?view=starred' "$TMP/alex.jar" >/dev/null; python3 -c "import json;print(str(any(i['id']=='$NOTES' for i in json.load(open('$TMP/body'))['items'])).lower())")"
 check 'trash file' 200 "$(request PATCH "/api/files/$NOTES" "$TMP/alex.jar" '{"action":"trash"}')"
-check 'file not in root after trash' true "$(request GET '/api/files?view=all&limit=100' "$TMP/alex.jar" >/dev/null; python3 -c "import json;print(not any(i['id']=='$NOTES' for i in json.load(open('$TMP/body'))['items']))")"
-check 'file in trash' true "$(request GET '/api/files?view=trash' "$TMP/alex.jar" >/dev/null; python3 -c "import json;print(any(i['id']=='$NOTES' for i in json.load(open('$TMP/body'))['items']))")"
+check 'file not in root after trash' true "$(request GET '/api/files?view=all&limit=100' "$TMP/alex.jar" >/dev/null; python3 -c "import json;print(str(not any(i['id']=='$NOTES' for i in json.load(open('$TMP/body'))['items'])).lower())")"
+check 'file in trash' true "$(request GET '/api/files?view=trash' "$TMP/alex.jar" >/dev/null; python3 -c "import json;print(str(any(i['id']=='$NOTES' for i in json.load(open('$TMP/body'))['items'])).lower())")"
 check 'restore file' 200 "$(request PATCH "/api/files/$NOTES" "$TMP/alex.jar" '{"action":"restore"}')"
 check 'permanent delete' 200 "$(request DELETE "/api/files/$NOTES" "$TMP/alex.jar")"
 check 'deleted file 404' 404 "$(request GET "/api/files/$NOTES" "$TMP/alex.jar")"
@@ -134,7 +134,7 @@ check 'revoked content rejected' 403 "$(plain "$BASE/api/files/$PALETTE/content?
 request GET '/api/files?view=all&limit=100&folder=' "$TMP/alex.jar" >/dev/null
 request GET '/api/files?view=all&limit=100' "$TMP/alex.jar" >/dev/null
 check 'upload editor file' 201 "$(upload "$TMP/alex.jar" "$TMP/notes.txt" 'editor.txt')"
-EDITOR_FILE=$(get id)
+EDITOR_FILE=$(get file.id)
 check 'enable editor link' 200 "$(request POST "/api/files/$EDITOR_FILE/share" "$TMP/alex.jar" '{"visibility":"link","role":"editor"}')"
 EDITOR_TOKEN=$(get token)
 check 'editor link role' editor "$(request GET "/api/share/$EDITOR_TOKEN" "$TMP/anon.jar" >/dev/null; get role)"
